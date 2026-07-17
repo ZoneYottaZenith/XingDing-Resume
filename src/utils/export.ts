@@ -20,10 +20,7 @@ const downloadBlob = (blob: Blob, fileName: string) => {
   const link = document.createElement("a");
   link.href = url;
   link.download = fileName;
-  link.style.display = "none";
-  document.body.appendChild(link);
-  link.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
-  document.body.removeChild(link);
+  link.click();
   window.URL.revokeObjectURL(url);
 };
 
@@ -200,27 +197,21 @@ export const exportToPdf = async ({
     const selectedFontFamily = normalizeFontFamily(fontFamily);
     const transformValue = clonedElement.style.transform || "";
     const scaleMatch = transformValue.match(/scale\(([\d.]+)\)/);
-    let hasScale = false;
     
     if (scaleMatch) {
       const scale = Number(scaleMatch[1]);
       if (Number.isFinite(scale) && scale > 0 && scale < 1) {
-        hasScale = true;
         // 服务端导出前将 transform 缩放转为 zoom，避免分页计算偏差
-        // 注意：保留原始 width（预览中 width = 100/scaleFactor%，保证 zoom 后填满 A4）
         clonedElement.style.removeProperty("transform");
         clonedElement.style.removeProperty("transform-origin");
+        clonedElement.style.setProperty("width", "100%", "important");
         clonedElement.style.setProperty("zoom", String(scale));
       }
     }
 
     // 采用 PdfExport.tsx 中的逻辑，统一宽度和 padding 处理
-    // 未缩放时显式设 width:100%；已缩放时保留原始宽度（与 zoom 配合填满 A4）
-    if (!hasScale) {
-      clonedElement.style.setProperty("width", "100%", "important");
-    }
-    // 保留原始 padding（与预览一致），服务端不再额外加 margin
-    clonedElement.style.setProperty("padding", `${pagePadding}px`, "important");
+    clonedElement.style.setProperty("width", "100%", "important");
+    clonedElement.style.setProperty("padding", "0", "important");
     clonedElement.style.setProperty("box-sizing", "border-box");
     clonedElement.style.setProperty("font-family", selectedFontFamily, "important");
 
@@ -253,7 +244,7 @@ export const exportToPdf = async ({
       body: JSON.stringify({
         content: clonedElement.outerHTML,
         styles,
-        margin: 0
+        margin: pagePadding
       }),
       mode: "cors",
       signal: AbortSignal.timeout(PDF_EXPORT_CONFIG.TIMEOUT)

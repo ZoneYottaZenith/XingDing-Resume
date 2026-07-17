@@ -33,9 +33,9 @@ export const exportResumeToBrowserPrint = async (
       const scale = Number(match[1]);
       if (Number.isFinite(scale) && scale > 0 && scale < 1) {
         // 打印时使用 zoom 参与分页布局计算，比 transform 更接近最终分页效果
-        // 保留原始 width（预览中 width = 100/scaleFactor%），保证 zoom 后填满 A4
         clonedContent.style.removeProperty("transform");
         clonedContent.style.removeProperty("transform-origin");
+        clonedContent.style.setProperty("width", "100%");
         clonedContent.style.setProperty("zoom", String(scale));
       }
     }
